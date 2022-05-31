@@ -8,12 +8,19 @@ const To_buy_List_OP = document.querySelector('.To_buy_List');
 
 const filter_option = document.querySelector('.to_buy');
 
+const quantity_ip = document.querySelector('.quantity_item');
+var global_storage=[];
+
+var global_grocery_list=[]
+
+var add_url = 'https://grocerylistapp.azurewebsites.net/groceryList';
 
 
-console.log("Hello");
-
+//event listener
 
 document.addEventListener("DOMContentLoaded", getToBuys);
+
+//document.addEventListener("DOMContentLoaded", user_append);
 
 grocery_item_addButton.addEventListener('click', add_Grocery_item);
 To_buy_List_OP.addEventListener('click', deleteCheck);
@@ -21,41 +28,71 @@ filter_option.addEventListener('click', filterTodo);
 
 
 //functions
-async function fetchData() {
-    const response = await fetch("https://grocerylistapp.azurewebsites.net/groceryList");
-    const data = await response.json();
-    return data;    
-  }
 
-var response = fetchData();
-var data = JSON.parse(response);
+//get from URL
+async function get_all_groceries(){
 
-data.forEach(item => {    
-    console.log(item.itemName);
-})
+    global_grocery_list=[]
 
+    let tobuys;
+    get_url = 'https://grocerylistapp.azurewebsites.net/groceryList'
+    fetch(get_url)
+    .then((response) => {
+    if (response.ok) {
+        return response.json();
+    } else {
+        throw new Error("NETWORK RESPONSE ERROR");
+    }
+    })
+    .then(data => {
+    append_to_buy(data)
+    })
+    .catch((error) => console.error("FETCH ERROR:", error));
 
+    function append_to_buy(d){
+
+        if (d === null){
+            tobuys = [];
+        }
+        else{
+            tobuys = d;
+        }
+        tobuys.forEach(function(tobuy){
+            local_Storage = {};
+            local_Storage['itemName'] = tobuy.itemName;
+            local_Storage['itemQuantity'] = tobuy.itemQuantity;
+            local_Storage['purchased'] = tobuy.purchased;
+            local_Storage['userId'] = tobuy.userId;
+            local_Storage['itemId'] = tobuy.itemId;
+        global_grocery_list.push(local_Storage);
+        });
+}}
 
 function add_Grocery_item(event){
+    local_Storage={}
     //prevent form from submitting
     event.preventDefault();
 
+    
     //create a to_Buy Div in js and add a classlits
     const to_Buy_Div = document.createElement('div');
     to_Buy_Div.classList.add('To_buy');
 
     const to_Buy_Li = document.createElement('li');
-    to_Buy_Li.innerText = grocery_item_IP.value;
+    to_Buy_Li.innerText = grocery_item_IP.value + '('+String(quantity_ip.value)+')';
+    local_Storage['itemName'] = grocery_item_IP.value;
+    local_Storage['itemQuantity'] = quantity_ip.value;
+    local_Storage['purchased'] = false;
+    local_Storage['userId'] = 1;
 
+    
     to_Buy_Li.classList.add('to_Buy_item');
 
     //making to_buy_li to come inside to_Buy_divx
 
     to_Buy_Div.appendChild(to_Buy_Li);
 
-    //add tobuy to local storage
-
-    saveToBuys(grocery_item_IP.value);
+    
 
     //Ispurchased button
     const is_purchased = document.createElement('button');
@@ -69,9 +106,32 @@ function add_Grocery_item(event){
     Rem_groc.classList.add('Rem_groc_button');
     to_Buy_Div.appendChild(Rem_groc);
 
+    
+    //api calls 
+    /*
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", add_url, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify(local_Storage));*/
+    var response_post_id;
+    fetch(add_url,{method:"POST", 
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(local_Storage)})
+        .then(response => response.json())
+        .then(data => {response_post_id=append_data(data)});
+    function append_data(data){
+        response_post_id = data.itemId;
+        return response_post_id;
+    }
+    to_Buy_Div.setAttribute('id', response_post_id);
     To_buy_List_OP.appendChild(to_Buy_Div);
-
+    
+    
     grocery_item_IP.value = "";
+    quantity_ip.value = null;
+    global_storage.push(local_Storage);
+
+    get_all_groceries();
 }
 
 
@@ -83,7 +143,13 @@ function deleteCheck(e){
     if(item.classList[0] === 'Rem_groc_button'){
         const to_buy = item.parentElement;
         to_buy.classList.add('delete_transition');
+        delete_url = 'https://grocerylistapp.azurewebsites.net/groceryList/';
+        
+        id = to_buy.id;
+        url = delete_url+String(id);
+        fetch(url,{method:'DELETE'})
         remove_local_items(to_buy);
+        get_all_groceries();
         to_buy.addEventListener('transitionend', function(){
             to_buy.remove();
         })
@@ -93,6 +159,15 @@ function deleteCheck(e){
     if(item.classList[0] === 'is_purchased_button'){
         const to_buy = item.parentElement;
         to_buy.classList.add('purchased');
+        purchased_url = 'https://grocerylistapp.azurewebsites.net/groceryList/purchased/';
+        id = to_buy.id;
+        
+        
+        url = purchased_url+String(id);
+        fetch(url)
+
+        get_all_groceries();
+
     }
 }
 
@@ -108,7 +183,6 @@ function filterTodo(e){
                 if (tobuy.classList.contains('purchased')){
                     tobuy.style.display = 'flex';
                 }else{
-                    console.log(tobuy.style.display);
                     tobuy.style.display = 'none';
                 }
                 break;
@@ -125,7 +199,7 @@ function filterTodo(e){
 
 }
 
-
+/*
 function saveToBuys(tobuy){
     //check -the things are already present?
     let tobuys;
@@ -140,48 +214,76 @@ function saveToBuys(tobuy){
 
     localStorage.setItem('tobuys', JSON.stringify(tobuys));
 
-
-
-}
+}*/
 
 function getToBuys(){
     let tobuys;
-    if (localStorage.getItem('tobuys') === null){
-        tobuys = []
+    get_url = 'https://grocerylistapp.azurewebsites.net/groceryList'
+    fetch(get_url)
+    .then((response) => {
+    if (response.ok) {
+        return response.json();
+    } else {
+        throw new Error("NETWORK RESPONSE ERROR");
     }
-    else{
-        tobuys = JSON.parse(localStorage.getItem('tobuys'));
-    }
-    tobuys.forEach(function(tobuy){
+    })
+    .then(data => {
+    append_to_buy(data)
+    })
+    .catch((error) => console.error("FETCH ERROR:", error));
 
-        //create a to_Buy Div in js and add a classlits
-        const to_Buy_Div = document.createElement('div');
-        to_Buy_Div.classList.add('To_buy');
+    function append_to_buy(d){
 
-        const to_Buy_Li = document.createElement('li');
-        to_Buy_Li.innerText = tobuy;
+        if (d === null){
+            tobuys = [];
+        }
+        else{
+            tobuys = d;
+        }
 
-        to_Buy_Li.classList.add('to_Buy_item');
+        tobuys.forEach(function(tobuy){
+            local_Storage = {};
+            local_Storage['itemName'] = tobuy.itemName;
+            local_Storage['itemQuantity'] = tobuy.itemQuantity;
+            local_Storage['purchased'] = tobuy.purchased;
+            local_Storage['userId'] = tobuy.userId;
+            local_Storage['itemId'] = tobuy.itemId;
+            //create a to_Buy Div in js and add a classlits
+            const to_Buy_Div = document.createElement('div');
+            to_Buy_Div.classList.add('To_buy');
+            to_Buy_Div.classList.add(tobuy.itemId);
 
-        //making to_buy_li to come inside to_Buy_divx
 
-        to_Buy_Div.appendChild(to_Buy_Li);
+            const to_Buy_Li = document.createElement('li');
+            to_Buy_Li.innerText = tobuy.itemName + '(' + String(tobuy.itemQuantity)+')';
 
-        //Ispurchased button
-        const is_purchased = document.createElement('button');
-        is_purchased.innerHTML = '<i class = "fas fa-check"></i>';
-        is_purchased.classList.add('is_purchased_button');
-        to_Buy_Div.appendChild(is_purchased);
+            to_Buy_Li.classList.add('to_Buy_item');
 
-        //Rem_groc button
-        const Rem_groc = document.createElement('button');
-        Rem_groc.innerHTML = '<i class = "fas fa-trash"></i>';
-        Rem_groc.classList.add('Rem_groc_button');
-        to_Buy_Div.appendChild(Rem_groc);
+            //making to_buy_li to come inside to_Buy_divx
 
-        To_buy_List_OP.appendChild(to_Buy_Div);
+            to_Buy_Div.appendChild(to_Buy_Li);
 
-    });
+            //Ispurchased button
+            const is_purchased = document.createElement('button');
+            is_purchased.innerHTML = '<i class = "fas fa-check"></i>';
+            is_purchased.classList.add('is_purchased_button');
+            to_Buy_Div.appendChild(is_purchased);
+
+            //Rem_groc button
+            const Rem_groc = document.createElement('button');
+            Rem_groc.innerHTML = '<i class = "fas fa-trash"></i>';
+            Rem_groc.classList.add('Rem_groc_button');
+            to_Buy_Div.appendChild(Rem_groc);
+
+            if (tobuy.purchased == true){
+                to_Buy_Div.classList.add('purchased');
+            }
+            to_Buy_Div.setAttribute('id', tobuy.itemId);
+
+            To_buy_List_OP.appendChild(to_Buy_Div);
+            global_storage.push(local_Storage);
+            get_all_groceries()
+    });}
 }
 
 function remove_local_items(tobuy){
@@ -194,6 +296,20 @@ function remove_local_items(tobuy){
     }
     tobuys.splice(tobuys.indexOf(tobuy.children[0].innerText), 1);
     localStorage.setItem('tobuys', JSON.stringify(tobuys));
-    console.log(tobuys.indexOf(tobuy.children[0].innerText));
+    
 }
+//get all the users from the GET id
 
+/*
+function user_append(){
+    let users;
+    user_url = "https://grocerylistapp.azurewebsites.net/users";
+    data = get_from_URL(user_url);
+    if (data === null){
+        users = ['Arbitary_user'];
+    }
+    else{
+        console.log(data);
+    }
+}
+*/

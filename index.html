@@ -17,8 +17,9 @@
     <header>
         <h1>Grocery List <i class="fa-solid fa-basket-shopping"></i></h1>
     </header>
-    <form>        
-        <input type="text" class="grocery_item" placeholder="Enter your grocery item">        
+    <form>
+        <input type="text" class="grocery_item" placeholder="Enter your grocery item" required>
+        <input type="number" class="quantity_item" placeholder="Enter quantity" min="1" required>        
         <button class="grocery_item_add_button" type="submit">
             <i class="fas fa-plus-square"></i>
         </button>
