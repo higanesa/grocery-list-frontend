@@ -20,14 +20,29 @@ var add_url = 'https://grocerylistapp.azurewebsites.net/groceryList';
 
 document.addEventListener("DOMContentLoaded", getToBuys);
 
-//document.addEventListener("DOMContentLoaded", user_append);
-
 grocery_item_addButton.addEventListener('click', add_Grocery_item);
 To_buy_List_OP.addEventListener('click', deleteCheck);
 filter_option.addEventListener('click', filterTodo);
 
 
 //functions
+
+function validate() {
+    var groceryItem = document.getElementById('grocery_item');
+    if(!groceryItem.value){
+        alert('Fill the Grocery Item');
+        groceryItem.focus();
+        return false;
+    }
+
+    var quantityItem = document.getElementById('quantity_item');
+    if(!quantityItem.value){
+        alert('Fill the Quantity');
+        quantityItem.focus();
+        return false;
+    }
+
+}
 
 //get from URL
 async function get_all_groceries(){
@@ -108,11 +123,6 @@ function add_Grocery_item(event){
 
     
     //api calls 
-    /*
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", add_url, true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.send(JSON.stringify(local_Storage));*/
     var response_post_id;
     fetch(add_url,{method:"POST", 
     headers:{'Content-Type':'application/json'},
@@ -199,22 +209,6 @@ function filterTodo(e){
 
 }
 
-/*
-function saveToBuys(tobuy){
-    //check -the things are already present?
-    let tobuys;
-    if (localStorage.getItem('tobuys') === null){
-        tobuys = []
-    }
-    else{
-        tobuys = JSON.parse(localStorage.getItem('tobuys'));
-    }
-
-    tobuys.push(tobuy);
-
-    localStorage.setItem('tobuys', JSON.stringify(tobuys));
-
-}*/
 
 function getToBuys(){
     let tobuys;
@@ -298,18 +292,3 @@ function remove_local_items(tobuy){
     localStorage.setItem('tobuys', JSON.stringify(tobuys));
     
 }
-//get all the users from the GET id
-
-/*
-function user_append(){
-    let users;
-    user_url = "https://grocerylistapp.azurewebsites.net/users";
-    data = get_from_URL(user_url);
-    if (data === null){
-        users = ['Arbitary_user'];
-    }
-    else{
-        console.log(data);
-    }
-}
-*/
