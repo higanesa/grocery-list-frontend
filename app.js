@@ -86,10 +86,12 @@ async function get_all_groceries(){
 }}
 
 function add_Grocery_item(event){
+
+    
     local_Storage={}
     //prevent form from submitting
     event.preventDefault();
-
+    if (grocery_item_IP.value != '' && quantity_ip.value!= null){
     
     //create a to_Buy Div in js and add a classlits
     const to_Buy_Div = document.createElement('div');
@@ -144,6 +146,9 @@ function add_Grocery_item(event){
     global_storage.push(local_Storage);
 
     get_all_groceries();
+}else{
+    alert("Invalid Entries : values cannot be empty");
+}
 }
 
 
