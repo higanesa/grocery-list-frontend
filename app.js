@@ -42,6 +42,8 @@ function validate() {
         return false;
     }
 
+    return( true );
+
 }
 
 //get from URL
